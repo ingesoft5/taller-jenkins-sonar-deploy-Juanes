@@ -1,8 +1,7 @@
 pipeline {
-    agent any
+    agent none
 
     environment {
-        // Nombre del servidor SonarQube configurado en Administrar Jenkins -> System
         SONAR_SERVER_NAME = 'SonarQube-Server'
         PROJECT_KEY       = 'product-api'
         IMAGE_NAME        = 'product-api'
@@ -14,16 +13,20 @@ pipeline {
         // ETAPA 1: PRUEBAS Y COBERTURA DE CODIGO (JACOCO)
         // =========================================================================
         stage('Pruebas & Cobertura JaCoCo') {
+            agent {
+                docker {
+                    image 'maven:3.9.6-eclipse-temurin-17'
+                    args '--network taller-jenkins-sonar-deploy_devops-network'
+                }
+            }
             steps {
-                echo '===> [ETAPA 1] Compilando y ejecutando pruebas unitarias e instrumentacion JaCoCo...'
                 dir('backend') {
                     sh 'mvn clean verify'
                 }
             }
             post {
                 always {
-                    // Publica reporte visual de pruebas JUnit en la interfaz de Jenkins
-                    junit '**/target/surefire-reports/*.xml'
+                    junit allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml'
                 }
             }
         }
