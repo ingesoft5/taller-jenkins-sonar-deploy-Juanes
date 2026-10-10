@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # =========================================================================
+  # SERVICIO DE INSPECCION CONTINUA Y CALIDAD DE CODIGO (SAST)
+  # =========================================================================
+  sonarqube:
+    build:
+      context: ./sonarqube
+      dockerfile: Dockerfile
+    image: sonarqube:10-community
+    container_name: sonarqube
+    ports:
+      - "9000:9000"
+    environment:
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+    restart: unless-stopped
+    networks:
+      - devops-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/api/system/status || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # =========================================================================
+  # MICROSERVICIO BACKEND (SPRING BOOT 3)
+  # =========================================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: product-api:latest
+    container_name: product-api-running
+    ports:
+      - "8085:8080"
+    networks:
+      - devops-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/api/products || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+
+  # =========================================================================
+  # CLIENTE FRONTEND (REACT / VITE / NGINX)
+  # =========================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: product-frontend:latest
+    container_name: product-frontend-running
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - devops-network
+    restart: unless-stopped
+
+volumes:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
+
+networks:
+  devops-network:
+    driver: bridge

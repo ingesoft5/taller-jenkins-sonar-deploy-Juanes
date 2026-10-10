@@ -1,0 +1,18 @@
+# Java Maven
+target/
+*.class
+
+# Frontend React
+node_modules/
+dist/
+.vite/
+
+# OS / Editor
+.DS_Store
+*.log
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/

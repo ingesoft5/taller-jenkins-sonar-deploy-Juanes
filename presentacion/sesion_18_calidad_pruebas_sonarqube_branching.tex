@@ -1,0 +1,748 @@
+\documentclass[aspectratio=169]{beamer}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{listings}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{colortbl}
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,arrows.meta,positioning,shadows,calc,fit,backgrounds,decorations.pathreplacing}
+
+% Paquete de estilos personalizados Icesi / Ingesoft V
+\usepackage{custombeamer}
+
+% Colores auxiliares de soporte
+\definecolor{cbBorder}{HTML}{D1D5DB}
+\definecolor{cbRowLight}{HTML}{F3F4F6}
+\definecolor{cbCardBg}{HTML}{F9FAFB}
+\definecolor{cbCodeBg}{HTML}{F4F4F8}
+\definecolor{cbSonarBlue}{HTML}{4B9FD5}
+\definecolor{cbRedAlert}{HTML}{DC2626}
+\definecolor{cbGreenPass}{HTML}{16A34A}
+
+% Configuraciones de Listings para Java / Groovy / Bash
+\lstdefinestyle{javalst}{
+    backgroundcolor=\color{cbCodeBg},
+    basicstyle=\ttfamily\scriptsize,
+    keywordstyle=\color{cbBlue}\bfseries,
+    commentstyle=\color{cbMuted}\itshape,
+    stringstyle=\color{cbOrange},
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{cbBorder},
+    showstringspaces=false,
+    tabsize=2,
+    morekeywords={@Test,@ExtendWith,@Mock,@InjectMocks,@SpringBootTest,@Autowired,@Container,public,void,class,return,new,assertNotNull,assertEquals,assertTrue,verify,when}
+}
+
+\lstdefinestyle{groovylst}{
+    backgroundcolor=\color{cbCodeBg},
+    basicstyle=\ttfamily\scriptsize,
+    keywordstyle=\color{cbBlue}\bfseries,
+    commentstyle=\color{cbMuted}\itshape,
+    stringstyle=\color{cbOrange},
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{cbBorder},
+    showstringspaces=false,
+    tabsize=2,
+    morekeywords={pipeline,agent,stages,stage,steps,sh,post,always,success,failure,echo,checkout,scm,script,withSonarQubeEnv,waitForQualityGate,timeout,error,nexusPublisher}
+}
+
+\lstdefinestyle{bashlst}{
+    backgroundcolor=\color{cbCodeBg},
+    basicstyle=\ttfamily\scriptsize,
+    keywordstyle=\color{cbBlue}\bfseries,
+    commentstyle=\color{cbMuted}\itshape,
+    stringstyle=\color{cbOrange},
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{cbBorder},
+    showstringspaces=false,
+    tabsize=2
+}
+
+\begin{document}
+
+% ==============================================================================
+% PORTADA INSTITUCIONAL
+% ==============================================================================
+\titleSlideDarkMode
+  {Estrategias de Branching, Pruebas y Calidad Continua}
+  {GitFlow vs TBD, JaCoCo, SonarQube y Orquestación en Jenkins y Nexus}
+  {Prof. Alejandro Muñoz Bravo}
+  {Ingeniería de Software V $\bullet$ Universidad ICESI — Período 2026-2}
+
+% ==============================================================================
+% AGENDA GENERAL
+% ==============================================================================
+\agendaSlideProgress{Ruta de Aprendizaje de la Sesión}{1}
+  {Estrategias de Branching y Gobernanza Git}
+  {Pirámide y Automatización de Pruebas en el Build}
+  {Cobertura con JaCoCo y Análisis Estático con SonarQube}
+  {Orquestación CI/CD: Jenkins, Quality Gates y Nexus}
+
+% ==============================================================================
+% SECCIÓN 1: ESTRATEGIAS DE BRANCHING Y GOBERNANZA GIT
+% ==============================================================================
+\sectionSlideSolid{01}{Estrategias de Branching}{De ramas de larga vida al flujo continuo de Trunk-Based Development}
+
+% Diapositiva 1.1: GitFlow vs Trunk-Based Development
+\contentSlideTwoCols{Branching: GitFlow vs Trunk-Based Development}
+  {GitFlow (Ramas Tradicionales)}
+  {
+    {\footnotesize
+    \textbf{Estructura pesada con múltiples ramas:}
+    \begin{itemize}
+      \setlength{\itemsep}{1.5pt}
+      \setlength{\topsep}{1pt}
+      \item Ramas de larga vida (\texttt{develop}, \texttt{release}).
+      \item Aislamiento prolongado del trabajo individual.
+      \item \textbf{Merge Hell:} Conflictos masivos al integrar.
+      \item Entregas lentas por lotes (\textit{Batch Releases}).
+    \end{itemize}
+    \vspace{0.15cm}
+    \textit{Inadecuado para ciclos de entrega continua ágiles.}
+    }
+  }
+  {Trunk-Based Development (TBD)}
+  {
+    {\footnotesize
+    \textbf{Flujo continuo sobre una sola rama principal:}
+    \begin{itemize}
+      \setlength{\itemsep}{1.5pt}
+      \setlength{\topsep}{1pt}
+      \item Integración diaria de cambios en \texttt{main}.
+      \item Ramas efímeras (\textit{Short-lived}): $< 24$--48 horas.
+      \item Integraciones atómicas y resolución continua.
+      \item Desacople vía \textbf{Feature Flags / Toggles}.
+    \end{itemize}
+    \vspace{0.15cm}
+    \textbf{Optimiza métricas DORA clave (\textit{DF} y \textit{LTTC}).}
+    }
+  }
+
+% Diapositiva 1.2: Diagrama comparativo TBD vs GitFlow en TikZ
+\begin{frame}{Topología Comparada de Ramificación}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.485\textwidth}
+      \begin{tcolorbox}[colback=cbWhite,colframe=cbBorder,arc=4pt,drop shadow,top=6pt,bottom=6pt,left=6pt,right=6pt]
+        {\footnotesize\bfseries\color{cbBlue} Modelo GitFlow (Complejidad Alta)}\par
+        \vspace{0.25cm}
+        \centering
+        \begin{tikzpicture}[xscale=0.58, yscale=0.65]
+          % Main line
+          \draw[line width=1.4pt, cbDark] (0,2.0) -- (7.5,2.0) node[right, font=\tiny\bfseries] {main};
+          \fill[cbDark] (0.5,2.0) circle (2.5pt);
+          \fill[cbDark] (7.2,2.0) circle (2.5pt);
+          % Develop line
+          \draw[line width=1.2pt, cbBlue] (0,1.0) -- (7.5,1.0) node[right, font=\tiny\bfseries] {develop};
+          \fill[cbBlue] (0.5,1.0) circle (2pt);
+          \fill[cbBlue] (6.5,1.0) circle (2pt);
+          % Feature branch
+          \draw[line width=1pt, cbPurple, dashed] (1.0,1.0) -- (1.8,0.0) -- (4.2,0.0) -- (5.0,1.0);
+          \fill[cbPurple] (1.8,0.0) circle (2pt);
+          \fill[cbPurple] (3.0,0.0) circle (2pt);
+          \fill[cbPurple] (4.2,0.0) circle (2pt);
+          \node[font=\tiny\bfseries\color{cbPurple}, below] at (3.0,-0.05) {feature (días/sem)};
+          % Release branch
+          \draw[line width=1pt, cbOrange, dashed] (5.0,1.0) -- (5.8,1.5) -- (6.6,1.5) -- (7.2,2.0);
+          \node[font=\tiny\bfseries\color{cbOrange}, above] at (6.2,1.5) {release};
+        \end{tikzpicture}
+        \par\vspace{0.25cm}
+        \raggedright
+        {\scriptsize
+        \begin{itemize}
+          \setlength{\itemsep}{2pt}
+          \item Ramas divergentes acumulan deuda de merge.
+          \item Ceremonias de estabilización costosas y manuales.
+          \item Integraciones tardías con conflictos severos.
+        \end{itemize}
+        }
+      \end{tcolorbox}
+    \end{column}
+    \begin{column}{0.485\textwidth}
+      \begin{tcolorbox}[colback=cbWhite,colframe=cbBorder,arc=4pt,drop shadow,top=6pt,bottom=6pt,left=6pt,right=6pt]
+        {\footnotesize\bfseries\color{cbGreen} Trunk-Based Development (Flujo Continuo)}\par
+        \vspace{0.25cm}
+        \centering
+        \begin{tikzpicture}[xscale=0.58, yscale=0.65]
+          % Trunk line
+          \draw[line width=1.6pt, cbGreen] (0,1.0) -- (7.5,1.0) node[right, font=\tiny\bfseries] {main};
+          \fill[cbGreen] (0.8,1.0) circle (2.5pt);
+          \fill[cbGreen] (2.8,1.0) circle (2.5pt);
+          \fill[cbGreen] (4.8,1.0) circle (2.5pt);
+          \fill[cbGreen] (6.8,1.0) circle (2.5pt);
+          % Short lived 1
+          \draw[line width=1pt, cbBlue] (0.8,1.0) to[bend left=45] (1.8,1.8) to[bend left=45] (2.8,1.0);
+          \fill[cbBlue] (1.8,1.8) circle (2pt);
+          \node[font=\tiny\color{cbBlue}, above] at (1.8,1.85) {PR $<$ 24h};
+          % Short lived 2
+          \draw[line width=1pt, cbPurple] (2.8,1.0) to[bend left=45] (3.8,1.8) to[bend left=45] (4.8,1.0);
+          \fill[cbPurple] (3.8,1.8) circle (2pt);
+          \node[font=\tiny\color{cbPurple}, above] at (3.8,1.85) {PR $<$ 24h};
+          % Short lived 3
+          \draw[line width=1pt, cbOrange] (4.8,1.0) to[bend left=45] (5.8,1.8) to[bend left=45] (6.8,1.0);
+          \fill[cbOrange] (5.8,1.8) circle (2pt);
+          \node[font=\tiny\color{cbOrange}, above] at (5.8,1.85) {PR $<$ 24h};
+        \end{tikzpicture}
+        \par\vspace{0.25cm}
+        \raggedright
+        {\scriptsize
+        \begin{itemize}
+          \setlength{\itemsep}{2pt}
+          \item Ramas de vida corta ($<$ 24h) integradas a main.
+          \item Cada merge ejecuta el pipeline de CI automáticamente.
+          \item Código siempre listo para ser desplegado.
+        \end{itemize}
+        }
+      \end{tcolorbox}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% Diapositiva 1.3: Métricas DORA y Rendimiento de Entrega
+\begin{frame}{Métricas DORA: Rendimiento y Gobernanza DevOps}
+  \vspace{-0.45cm}
+  {\scriptsize \textbf{DORA} (\textit{Google Cloud / Accelerate}) define 4 métricas cardinales que balancean \textbf{velocidad} y \textbf{estabilidad}:}
+  \vspace{0.15cm}
+
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.485\textwidth}
+      \begin{tcolorbox}[colback=cbBlue!8,colframe=cbBlue,arc=3pt,title=\textbf{1. Frecuencia de Despliegue (DF)},coltitle=cbWhite,fonttitle=\bfseries\scriptsize,top=2.5pt,bottom=2.5pt,left=5pt,right=5pt]
+        {\tiny
+        \textbf{Ritmo de entrega a producción:}\par\vspace{1pt}
+        $\bullet$ \textbf{Elite:} Múltiples veces al día (\textit{On-Demand}).\par
+        $\bullet$ \textbf{Clave:} Trunk-Based y ramas efímeras ($<$ 24h).
+        }
+      \end{tcolorbox}
+      \vspace{0.15cm}
+      \begin{tcolorbox}[colback=cbOrange!8,colframe=cbOrange,arc=3pt,title=\textbf{3. Tasa de Fallos en Cambios (CFR)},coltitle=cbWhite,fonttitle=\bfseries\scriptsize,top=2.5pt,bottom=2.5pt,left=5pt,right=5pt]
+        {\tiny
+        \textbf{Porcentaje de despliegues con fallos:}\par\vspace{1pt}
+        $\bullet$ \textbf{Elite:} 0\% -- 15\% de cambios defectuosos.\par
+        $\bullet$ \textbf{Clave:} Quality Gates con JaCoCo y SonarQube.
+        }
+      \end{tcolorbox}
+    \end{column}
+
+    \begin{column}{0.485\textwidth}
+      \begin{tcolorbox}[colback=cbPurple!8,colframe=cbPurple,arc=3pt,title=\textbf{2. Tiempo de Entrega (LTTC)},coltitle=cbWhite,fonttitle=\bfseries\scriptsize,top=2.5pt,bottom=2.5pt,left=5pt,right=5pt]
+        {\tiny
+        \textbf{Tiempo transcurrido de commit a producción:}\par\vspace{1pt}
+        $\bullet$ \textbf{Elite:} Menos de 1 hora (\textit{Lead Time}).\par
+        $\bullet$ \textbf{Clave:} Pipeline CI/CD en Jenkins automatizado.
+        }
+      \end{tcolorbox}
+      \vspace{0.15cm}
+      \begin{tcolorbox}[colback=cbGreen!8,colframe=cbGreen,arc=3pt,title=\textbf{4. Tiempo de Recuperación (MTTR)},coltitle=cbWhite,fonttitle=\bfseries\scriptsize,top=2.5pt,bottom=2.5pt,left=5pt,right=5pt]
+        {\tiny
+        \textbf{Tiempo de restauración ante incidentes:}\par\vspace{1pt}
+        $\bullet$ \textbf{Elite:} Menos de 1 hora de remediación.\par
+        $\bullet$ \textbf{Clave:} Artefactos inmutables en Nexus y Feature Flags.
+        }
+      \end{tcolorbox}
+    \end{column}
+  \end{columns}
+
+  \vspace{0.25cm}
+  \centering
+  {\scriptsize\bfseries\color{cbBlue} Metas Ingesoft V: Maximizar velocidad (\textit{DF, LTTC}) protegiendo la estabilidad operativa (\textit{CFR, MTTR}).}
+\end{frame}
+
+% Diapositiva 1.4: Políticas de Pull Requests y Code Reviews
+\contentSlideBulletCard{Políticas de Pull Request y Code Reviews Efectivos}
+  {
+    {\footnotesize
+    \begin{itemize}
+      \setlength{\itemsep}{1.5pt}
+      \item \textbf{Tamaño atómico de PRs:} Cambios menores a 400 líneas. Las PRs pequeñas se revisan con rigor; las gigantes acumulan riesgo.
+      \item \textbf{Descripción contextualizada:} Explicar el \textit{por qué}, adjuntar evidencias de pruebas y vincular la tarea de Jira.
+      \item \textbf{Foco en arquitectura y lógica:} Validar diseño, casos de borde y seguridad. Delegar formato y estilo a linters en el CI.
+      \item \textbf{SLA de revisión ágil:} Responder en menos de 4 horas hábiles para evitar cuellos de botella en el flujo.
+    \end{itemize}
+    }
+  }
+  {Cultura de Ingeniería}
+  {
+    El Code Review \textbf{no} es una auditoría burocrática ni punitiva. Es una práctica colectiva de mentoría, alineación técnica y blindaje antes de llegar a producción.
+  }
+
+% Diapositiva 1.4: Protección de Ramas (Branch Protection Rules)
+\contentSlideTwoCols{Protección de Ramas: Blindando la Integridad de Main}
+  {Controles de Aprobación Humana}
+  {
+    {\footnotesize
+    \begin{itemize}
+      \setlength{\itemsep}{2pt}
+      \item \textbf{Bloqueo de push directo:} Nadie (incluyendo líderes o admins) comitea directamente sobre \texttt{main}.
+      \item \textbf{Aprobaciones mínimas obligatorias:} Requerir al menos 1 o 2 aprobaciones de revisores pares cualificados.
+      \item \textbf{Invalidación de aprobaciones:} Al subir nuevos commits a la PR, las aprobaciones previas se descartan automáticamente (\textit{Dismiss stale reviews}).
+      \item \textbf{Restricción de permisos destructivos:} Prohibir totalmente \texttt{git push --force} y la eliminación de ramas principales.
+    \end{itemize}
+    }
+  }
+  {Status Checks Automatizados (CI)}
+  {
+    {\footnotesize
+    \begin{itemize}
+      \setlength{\itemsep}{2pt}
+      \item \textbf{Ejecución obligatoria del pipeline:} El merge queda deshabilitado a nivel de GitHub/Bitbucket hasta que Jenkins reporte estado verde.
+      \item \textbf{Rama actualizada (\textit{Strict Branch}):} Exigir que la rama de la PR esté sincronizada con la punta de \texttt{main} antes de fusionar.
+      \item \textbf{Aprobación del Quality Gate:} SonarQube debe emitir dictamen aprobatorio para habilitar el botón de merge.
+      \item \textbf{Estrategia de merge limpia:} Promover \textit{Squash and Merge} o \textit{Rebase and Merge} para preservar un historial lineal.
+    \end{itemize}
+    }
+  }
+
+% ==============================================================================
+% SECCIÓN 2: PIRÁMIDE Y AUTOMATIZACIÓN DE PRUEBAS EN FASE DE BUILD
+% ==============================================================================
+\agendaSlideProgress{Ruta de Aprendizaje de la Sesión}{2}
+  {Estrategias de Branching y Gobernanza Git}
+  {Pirámide y Automatización de Pruebas en el Build}
+  {Cobertura con JaCoCo y Análisis Estático con SonarQube}
+  {Orquestación CI/CD: Jenkins, Quality Gates y Nexus}
+
+\sectionSlideSolid{02}{Pirámide y Automatización de Pruebas}{Pruebas Unitarias, de Integración y Validación Continua en el Pipeline}
+
+% Diapositiva 2.1: Pirámide de Pruebas y Shift-Left
+\contentSlideBulletCard{La Pirámide de Pruebas y el Principio Shift-Left}
+  {
+    {\footnotesize
+    \begin{itemize}
+      \setlength{\itemsep}{1.5pt}
+      \item \textbf{Base (Unitarias):} Velocidad milimétrica, costo mínimo, aíslan la lógica del componente. Deben ser el 70--80\% de la suite.
+      \item \textbf{Centro (Integración):} Validan interacción real entre capas (persistencia, serialización, contratos API). Ejecutan en segundos.
+      \item \textbf{Cúspide (E2E / Sistema):} Flujos completos de usuario (Playwright). Lentas, frágiles y de mayor costo de mantenimiento.
+      \item \textbf{Principio Shift-Left:} Detectar defectos en el commit local reduce el costo de corrección de 100x a 1x.
+    \end{itemize}
+    }
+  }
+  {El Antipatrón del Cono de Helado}
+  {
+    Invertir la pirámide (muchas pruebas manuales/E2E y pocas unitarias) satura los agentes de Jenkins, retrasa el feedback a horas y genera falsos positivos.
+  }
+
+% Diapositiva 2.2: Pruebas Unitarias vs Pruebas de Integración
+\contentSlideTwoCols{Pruebas Unitarias vs. Pruebas de Integración}
+  {Pruebas Unitarias (Unit Tests)}
+  {
+    {\small
+    \textbf{Aislamiento total y máxima velocidad:}
+    \begin{itemize}
+      \setlength{\itemsep}{2pt}
+      \item Verifican una única función, clase o regla de negocio.
+      \item \textbf{Cero dependencias externas:} Sin acceso a bases de datos, red ni sistema de archivos.
+      \item Uso intensivo de dobles de prueba con \textbf{Mockito} (\texttt{@Mock}, \texttt{@InjectMocks}).
+      \item Ejecución automática con Maven Surefire (\texttt{mvn test}). Cientos de tests en 3--5 segundos.
+    \end{itemize}
+    }
+  }
+  {Pruebas de Integración (IT)}
+  {
+    {\small
+    \textbf{Validación de interoperabilidad real:}
+    \begin{itemize}
+      \setlength{\itemsep}{2pt}
+      \item Verifican el contexto de la aplicación (\texttt{@SpringBootTest}, repositorios JPA, controladores REST).
+      \item Uso de entornos efímeros reales mediante \textbf{Testcontainers} (PostgreSQL, Redis en Docker) o base en memoria.
+      \item Detectan errores de mapeo SQL, transaccionalidad y contratos HTTP.
+      \item Ejecución con Maven Failsafe (\texttt{mvn verify}).
+    \end{itemize}
+    }
+  }
+
+% Diapositiva 2.3: Implementación JUnit 5 + Mockito vs Testcontainers
+\begin{frame}[fragile]{Implementación: Unit Test (Mockito) vs Integration Test (Spring)}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.49\textwidth}
+      \textbf{\scriptsize\color{cbBlue} Prueba Unitaria: Aislamiento con Mockito}
+      \begin{lstlisting}[style=javalst,basicstyle=\ttfamily\fontsize{6.0pt}{7.2pt}\selectfont]
+@ExtendWith(MockitoExtension.class)
+class OrderServiceTest {
+  @Mock
+  private OrderRepository orderRepo;
+  @InjectMocks
+  private OrderService orderService;
+
+  @Test
+  void shouldCalculateDiscount() {
+    when(orderRepo.findTier("A01"))
+        .thenReturn(Tier.GOLD);
+    
+    double total = orderService
+        .compute(100.0, "A01");
+    assertEquals(80.0, total);
+    verify(orderRepo).findTier("A01");
+  }
+}
+      \end{lstlisting}
+    \end{column}
+    \begin{column}{0.49\textwidth}
+      \textbf{\scriptsize\color{cbPurple} Integración: Spring Boot + Base de Datos}
+      \begin{lstlisting}[style=javalst,basicstyle=\ttfamily\fontsize{6.0pt}{7.2pt}\selectfont]
+@SpringBootTest(webEnvironment = 
+    WebEnvironment.RANDOM_PORT)
+class OrderIntegrationTest {
+  @Autowired
+  private OrderRepository repository;
+
+  @Test
+  void shouldPersistAndRetrieveOrder() {
+    Order order = new Order("ORD-1", 100.0);
+    repository.save(order);
+
+    Optional<Order> found = 
+        repository.findById("ORD-1");
+    assertTrue(found.isPresent());
+    assertEquals(100.0, 
+        found.get().getAmount());
+  }
+}
+      \end{lstlisting}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ==============================================================================
+% SECCIÓN 3: COBERTURA CON JACOCO Y ANÁLISIS ESTÁTICO CON SONARQUBE
+% ==============================================================================
+\agendaSlideProgress{Ruta de Aprendizaje de la Sesión}{3}
+  {Estrategias de Branching y Gobernanza Git}
+  {Pirámide y Automatización de Pruebas en el Build}
+  {Cobertura con JaCoCo y Análisis Estático con SonarQube}
+  {Orquestación CI/CD: Jenkins, Quality Gates y Nexus}
+
+\sectionSlideSolid{03}{Métricas de Calidad y SonarQube}{JaCoCo, Deuda Técnica, Seguridad SAST y la filosofía Clean as You Code}
+
+% Diapositiva 3.1: Cobertura de Código con JaCoCo
+\contentSlideBulletCard{Medición de Cobertura de Código con JaCoCo}
+  {
+    {\small
+    Instrumentación de bytecode durante la ejecución de los tests:
+    \begin{itemize}
+      \item \textbf{¿Cómo opera?:} \texttt{jacoco-maven-plugin} inyecta sondas en los binarios compilados para registrar qué líneas y bifurcaciones se ejecutan.
+      \item \textbf{Line Coverage:} Porcentaje de sentencias ejecutadas por la suite de pruebas.
+      \item \textbf{Branch Coverage:} Porcentaje de caminos lógicos evaluados en estructuras condicionales (\texttt{if}, \texttt{else}, \texttt{switch}). Métrica mucho más rigurosa que la cobertura de líneas.
+      \item \textbf{Artefactos generados:} Archivo binario de ejecución \texttt{jacoco.exec} y reporte estructurado en XML (\texttt{jacoco.xml}) para ingesta en SonarQube.
+    \end{itemize}
+    }
+  }
+  {El Mito del 100\% de Cobertura}
+  {
+    Un código con 100\% de cobertura puede tener cero aserciones válidas (\textit{Assertion-free tests}) y estar plagado de bugs. La cobertura indica qué código \textbf{no} se probó, no demuestra que lo probado esté correcto.
+  }
+
+% Diapositiva 3.2: SonarQube como Analizador SAST
+\contentSlideTwoCols{SonarQube: Radiografía de la Calidad del Software}
+  {Pilares del Análisis Estático (SAST)}
+  {
+    {\footnotesize
+    \begin{itemize}
+      \setlength{\itemsep}{1.5pt}
+      \item \textbf{Bugs (Fiabilidad):} Defectos funcionales inminentes (\texttt{NullPointerException}, recursos sin cerrar).
+      \item \textbf{Vulnerabilidades (Seguridad):} Brechas explotables en producción (Inyecciones SQL, credenciales expuestas, fallas OWASP).
+      \item \textbf{Code Smells (Mantenibilidad):} Malos olores de diseño que elevan deuda técnica y complejidad ciclomática.
+      \item \textbf{Duplicación de código:} Bloques repetidos que multiplican el costo de cambio.
+    \end{itemize}
+    }
+  }
+  {Métricas y Calificaciones (Ratings)}
+  {
+    {\footnotesize
+    \begin{itemize}
+      \setlength{\itemsep}{1.5pt}
+      \item \textbf{Reliability Rating:} Letra A solo con 0 bugs abiertos.
+      \item \textbf{Security Rating:} Letra A solo con 0 vulnerabilidades.
+      \item \textbf{Security Hotspots:} Código sensible que requiere revisión arquitectónica manual.
+      \item \textbf{Deuda Técnica (Technical Debt):} Tiempo estimado requerido para subsanar los code smells.
+    \end{itemize}
+    }
+  }
+
+% Diapositiva 3.3: Filosofía "Clean as You Code" y Quality Gates
+\contentSlideTwoCols{Filosofía "Clean as You Code" y Quality Gates}
+  {Clean as You Code (New Code Focus)}
+  {
+    {\small
+    \textbf{La estrategia sostenible de saneamiento:}
+    \begin{itemize}
+      \setlength{\itemsep}{2pt}
+      \item Arreglar toda la deuda de un proyecto legado en bloque es inviable y paraliza el negocio.
+      \item \textbf{El principio del boy scout:} El foco absoluto de SonarQube está en el \textbf{Código Nuevo} (\textit{New Code}) introducido en la PR o versión reciente.
+      \item Si cada línea nueva cumple el estándar de calidad, la base de código mejora progresivamente sin frenar la entrega de valor.
+    \end{itemize}
+    }
+  }
+  {El Quality Gate: Filtro Binario}
+  {
+    {\small
+    \textbf{Criterios típicos de aprobación en New Code:}
+    \begin{itemize}
+      \setlength{\itemsep}{2pt}
+      \item \textbf{0 Nuevos Bugs} y \textbf{0 Nuevas Vulnerabilidades}.
+      \item \textbf{Security Rating = A} y \textbf{Reliability = A}.
+      \item \textbf{Cobertura en código nuevo $\ge$ 80\%} (evaluada con el reporte JaCoCo).
+      \item \textbf{Duplicación en código nuevo $<$ 3\%}.
+      \item \textbf{100\% de Security Hotspots revisados}.
+    \end{itemize}
+    \vspace{0.1cm}
+    \textit{Resultado estricto: PASSED (Verde) o FAILED (Rojo).}
+    }
+  }
+
+% ==============================================================================
+% SECCIÓN 4: ORQUESTACIÓN END-TO-END EN JENKINS Y NEXUS
+% ==============================================================================
+\agendaSlideProgress{Ruta de Aprendizaje de la Sesión}{4}
+  {Estrategias de Branching y Gobernanza Git}
+  {Pirámide y Automatización de Pruebas en el Build}
+  {Cobertura con JaCoCo y Análisis Estático con SonarQube}
+  {Orquestación CI/CD: Jenkins, Quality Gates y Nexus}
+
+\sectionSlideSolid{04}{Orquestación CI/CD con Jenkins y Nexus}{Cerrando el Ciclo: De la PR al Artefacto Inmutable Aprobado}
+
+% Diapositiva 4.1: Conectando con Clases Anteriores
+\contentSlideTwoCols{Conectando los Puntos: Jenkins, Calidad y Nexus}
+  {Jenkins: El Orquestador de la Cadena}
+  {
+    {\small
+    \begin{itemize}
+      \setlength{\itemsep}{2pt}
+      \item En sesiones anteriores vimos la arquitectura Controller--Agent, pipelines declarativos y webhooks con Smee.io.
+      \item Jenkins no evalúa calidad por sí mismo: \textbf{invoca a Maven y JaCoCo}, despacha el escaneo a SonarQube y actúa como árbitro del veredicto.
+      \item Notifica a GitHub/Bitbucket para habilitar o bloquear el botón de merge de la Pull Request.
+    \end{itemize}
+    }
+  }
+  {Nexus: El Repositorio Inmutable}
+  {
+    {\small
+    \begin{itemize}
+      \setlength{\itemsep}{2pt}
+      \item En la sesión de empaquetamiento aprendimos que Nexus almacena binarios inmutables (\texttt{.jar}, Docker images).
+      \item \textbf{Regla de oro de DevOps:} Un artefacto \textbf{NUNCA} se publica en Nexus si las pruebas fallaron o si el Quality Gate de SonarQube fue rechazado.
+      \item Nexus solo aloja artefactos cuya trazabilidad y calidad fueron certificadas por el pipeline de CI.
+    \end{itemize}
+    }
+  }
+
+% Diapositiva 4.2: Jenkinsfile Declarativo Completo
+\begin{frame}[fragile]{Jenkinsfile: Pruebas, Cobertura, SonarQube y Nexus}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.49\textwidth}
+      {\scriptsize\bfseries\color{cbBlue} Pipeline CI: Pruebas \& SonarQube}\par
+      \vspace{0.1cm}
+      \begin{lstlisting}[style=groovylst,basicstyle=\ttfamily\fontsize{5.8pt}{6.9pt}\selectfont]
+pipeline {
+  agent { 
+    docker { image 'maven:3.9-temurin-17' } 
+  }
+  stages {
+    stage('Checkout') {
+      steps { checkout scm }
+    }
+    stage('Unit & IT Tests') {
+      steps {
+        // Ejecuta pruebas y JaCoCo
+        sh 'mvn clean verify jacoco:report'
+      }
+    }
+    stage('SonarQube Static Analysis') {
+      steps {
+        withSonarQubeEnv('SonarQube-Server') {
+          sh 'mvn sonar:sonar \
+           -Dsonar.coverage.jacoco.xmlReportPaths=\
+            target/site/jacoco/jacoco.xml'
+        }
+      }
+    }
+      \end{lstlisting}
+    \end{column}
+    \begin{column}{0.49\textwidth}
+      {\scriptsize\bfseries\color{cbGreen} Gobernanza: Quality Gate \& Nexus}\par
+      \vspace{0.1cm}
+      \begin{lstlisting}[style=groovylst,basicstyle=\ttfamily\fontsize{5.8pt}{6.9pt}\selectfont]
+    stage('Quality Gate Enforcement') {
+      steps {
+        timeout(time: 2, unit: 'MINUTES') {
+          script {
+            def qg = waitForQualityGate()
+            if (qg.status != 'OK') {
+              error "QG Rechazado: ${qg.status}"
+            }
+          }
+        }
+      }
+    }
+    stage('Publish to Nexus') {
+      when { branch 'main' }
+      steps {
+        // Solo publica si QG aprobo
+        sh 'mvn deploy -DskipTests'
+      }
+    }
+  }
+}
+      \end{lstlisting}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% Diapositiva 4.3: Arquitectura y Flujo Integral en TikZ (Animada Secuencialmente)
+\begin{frame}{Flujo Integral de Gobernanza y Calidad en CI/CD}
+  \begin{tikzpicture}[remember picture, overlay]
+    \node[anchor=north west, fill=cbLight, draw=cbBorder, rounded corners=6pt, text width=14.8cm, minimum height=6.3cm, drop shadow]
+      at ($(current page.north west) + (0.6cm, -1.5cm)$) (maincard) {
+        \begin{tikzpicture}[scale=0.86, every node/.style={scale=0.86},
+            stepnode/.style={rectangle, rounded corners=4pt, draw=cbBorder, fill=cbWhite, text width=2.3cm, minimum height=1.2cm, align=center, font=\scriptsize\bfseries, drop shadow},
+            systemnode/.style={rectangle, rounded corners=4pt, draw=cbBlue, fill=cbBlue!10, text width=2.4cm, minimum height=1.2cm, align=center, font=\scriptsize\bfseries},
+            gatefail/.style={rectangle, rounded corners=4pt, draw=cbRedAlert, fill=cbRedAlert!10, text width=2.3cm, minimum height=1.2cm, align=center, font=\tiny\bfseries\color{cbRedAlert}},
+            nexusnode/.style={rectangle, rounded corners=4pt, draw=cbGreenPass, fill=cbGreenPass!10, text width=2.4cm, minimum height=1.2cm, align=center, font=\scriptsize\bfseries\color{cbGreenPass}}]
+
+          % Bounding Box constante para estabilizar la tarjeta en todos los overlays
+          \useasboundingbox (-0.2, 0.0) rectangle (14.2, 3.8);
+
+          % Fila Superior: Pasos 1 a 5 (Pipeline CI)
+          \node<1->[stepnode] (git) at (0, 3.0) {\color{cbBlue}1. Git / PR\\{\tiny Trunk-Based\\Branch efímera}};
+          
+          \node<2->[systemnode] (jenkins) at (3.5, 3.0) {\color{cbBlue}2. Jenkins CI\\{\tiny Webhook trigger\\Checkout SCM}};
+          \draw<2->[-{Latex[length=2.5mm]}, line width=1.2pt, cbBlue] (git) -- (jenkins);
+          
+          \node<3->[stepnode] (tests) at (7.0, 3.0) {\color{cbPurple}3. Maven + JaCoCo\\{\tiny Pruebas Unit/IT\\jacoco.xml}};
+          \draw<3->[-{Latex[length=2.5mm]}, line width=1.2pt, cbBlue] (jenkins) -- (tests);
+          
+          \node<4->[systemnode] (sonar) at (10.5, 3.0) {\color{cbSonarBlue}4. SonarQube\\{\tiny Análisis SAST\\Clean as You Code}};
+          \draw<4->[-{Latex[length=2.5mm]}, line width=1.2pt, cbBlue] (tests) -- (sonar);
+          
+          \node<5->[stepnode] (qg) at (14.0, 3.0) {5. Quality Gate\\{\tiny waitForQualityGate()}};
+          \draw<5->[-{Latex[length=2.5mm]}, line width=1.2pt, cbBlue] (sonar) -- (qg);
+
+          % Fila Inferior: Decisión y Despliegue
+          % Flujo de Error (Hacia abajo directamente)
+          \node<6->[gatefail] (failed) at (14.0, 0.8) {QG RECHAZADO\\{\tiny Bloquea PR en Git\\Notifica al Dev}};
+          \draw<6->[-{Latex[length=2.5mm]}, line width=1.2pt, cbRedAlert] (qg) -- node[right, font=\tiny\bfseries, color=cbRedAlert] {Falla} (failed);
+
+          % Flujo de Éxito (Diagonal limpia de QG a Merge sin pasar por Failed)
+          \node<7->[stepnode] (merge) at (10.2, 0.8) {\color{cbGreenPass}6. PR Aprobada\\{\tiny Merge a main\\Status Check OK}};
+          \draw<7->[-{Latex[length=2.5mm]}, line width=1.2pt, cbGreenPass] (qg.south west) -- node[above, sloped, font=\tiny\bfseries, color=cbGreenPass] {QG Aprobado} (merge.north east);
+
+          \node<8->[nexusnode] (nexus) at (6.0, 0.8) {7. Nexus Repo\\{\tiny Publica artefacto\\inmutable (.jar/img)}};
+          \draw<8->[-{Latex[length=2.5mm]}, line width=1.2pt, cbGreenPass] (merge) -- (nexus);
+
+          \node<9->[systemnode] (deploy) at (1.5, 0.8) {\color{cbBlue}8. Despliegue CD\\{\tiny Dev / Staging\\Zero-Downtime}};
+          \draw<9->[-{Latex[length=2.5mm]}, line width=1.2pt, cbBlue] (nexus) -- (deploy);
+        \end{tikzpicture}
+      };
+
+    % Subtítulo / Banner de explicación dinámico centrado y anclado a maincard
+    \tikzset{
+      bannerex/.style={anchor=south, rounded corners=4pt, text width=13.8cm, minimum height=0.6cm, align=center, font=\scriptsize\bfseries}
+    }
+    \node<1>[bannerex, fill=cbBlue!10, text=cbBlue] at ($(maincard.south) + (0, 0.35cm)$) {Paso 1: Desarrollador crea PR en rama efímera siguiendo Trunk-Based Development};
+    \node<2>[bannerex, fill=cbBlue!10, text=cbBlue] at ($(maincard.south) + (0, 0.35cm)$) {Paso 2: Webhook notifica a Jenkins CI y dispara ejecución en contenedor aislado};
+    \node<3>[bannerex, fill=cbPurple!10, text=cbPurple] at ($(maincard.south) + (0, 0.35cm)$) {Paso 3: Maven ejecuta pruebas unitarias y JaCoCo registra cobertura de líneas y ramas};
+    \node<4>[bannerex, fill=cbSonarBlue!10, text=cbSonarBlue] at ($(maincard.south) + (0, 0.35cm)$) {Paso 4: SonarQube realiza análisis SAST de bugs, vulnerabilidades y code smells};
+    \node<5>[bannerex, fill=cbBlue!10, text=cbBlue] at ($(maincard.south) + (0, 0.35cm)$) {Paso 5: Jenkins pausa con waitForQualityGate() a la espera del Webhook de SonarQube};
+    \node<6>[bannerex, fill=cbRedAlert!10, text=cbRedAlert] at ($(maincard.south) + (0, 0.35cm)$) {Bifurcación: QG no superado $\rightarrow$ Pipeline falla, PR bloqueada y feedback al desarrollador};
+    \node<7>[bannerex, fill=cbGreenPass!10, text=cbGreenPass] at ($(maincard.south) + (0, 0.35cm)$) {Bifurcación: QG superado $\rightarrow$ Status Check OK en GitHub/Git y merge habilitado a main};
+    \node<8>[bannerex, fill=cbGreenPass!10, text=cbGreenPass] at ($(maincard.south) + (0, 0.35cm)$) {Paso 7: Publicación del binario e imagen inmutable en Sonatype Nexus OSS};
+    \node<9>[bannerex, fill=cbBlue!10, text=cbBlue] at ($(maincard.south) + (0, 0.35cm)$) {Paso 8: Despliegue Continuo (CD) y validación automatizada de disponibilidad HTTP};
+  \end{tikzpicture}
+\end{frame}
+
+% Diapositiva 4.4: Conclusión destacada
+\contentSlideQuoteStat{Cultura de Calidad Continua en DevOps}
+  {Shift-Left}
+  {El Costo Exponencial de un Defecto}
+  {"Detectar un error en el entorno local cuesta 1x; capturarlo en el pipeline de CI cuesta 10x; descubrirlo en producción cuesta 100x y la reputación operativa del sistema."}
+
+% Diapositivas 4.5.1 a 4.5.5: Preguntas de Reflexión Animadas con Respuestas Técnicas
+
+\begin{frame}{Pregunta de Reflexión 1: Branching a Escala}
+  \begin{tcolorbox}[colback=cbBlue!8,colframe=cbBlue,arc=4pt,title=\textbf{Pregunta 1: Trunk-Based vs. GitFlow en Escala},coltitle=cbWhite,fonttitle=\bfseries\small,top=4pt,bottom=4pt,left=6pt,right=6pt]
+    \small ¿Por qué gigantes tecnológicos como Google, Meta y Netflix abandonaron GitFlow a favor de Trunk-Based Development con Feature Flags?
+  \end{tcolorbox}
+  \vspace{0.2cm}
+  \pause
+  \begin{tcolorbox}[colback=cbGreen!10,colframe=cbGreen,arc=4pt,title=\textbf{Análisis y Respuesta de Ingeniería},coltitle=cbWhite,fonttitle=\bfseries\small,top=4pt,bottom=4pt,left=6pt,right=6pt]
+    \footnotesize
+    \begin{itemize}
+      \setlength{\itemsep}{1.5pt}
+      \item \textbf{Eliminación del \textit{Merge Hell}:} Las ramas de larga duración provocan colisiones masivas y retrasan la integración semanas. En TBD, la integración es diaria y atómica.
+      \item \textbf{Desacople de Despliegue y Liberación:} Con \textit{Feature Flags}, el código se despliega a producción continuamente pero se activa dinámicamente sin bifurcar ramas de release.
+      \item \textbf{Feedback Rápido en CI:} Cada commit ejecuta la suite completa sobre la verdad única (\texttt{main}), reduciendo el tiempo de detección de fallos a minutos.
+    \end{itemize}
+  \end{tcolorbox}
+\end{frame}
+
+\begin{frame}{Pregunta de Reflexión 2: Tiempo de Feedback en CI}
+  \begin{tcolorbox}[colback=cbBlue!8,colframe=cbBlue,arc=4pt,title=\textbf{Pregunta 2: El Dilema del Tiempo en Pipelines de CI},coltitle=cbWhite,fonttitle=\bfseries\small,top=4pt,bottom=4pt,left=6pt,right=6pt]
+    \small Si una suite de pruebas de integración tarda 45 minutos en completarse, ¿cómo balancear la velocidad del feedback en la PR sin sacrificar cobertura?
+  \end{tcolorbox}
+  \vspace{0.2cm}
+  \pause
+  \begin{tcolorbox}[colback=cbGreen!10,colframe=cbGreen,arc=4pt,title=\textbf{Análisis y Respuesta de Ingeniería},coltitle=cbWhite,fonttitle=\bfseries\small,top=4pt,bottom=4pt,left=6pt,right=6pt]
+    \footnotesize
+    \begin{itemize}
+      \setlength{\itemsep}{1.5pt}
+      \item \textbf{Estratificación de Pipelines (Test Splitting):} En la PR solo corren pruebas unitarias y smoke tests críticos ($<$ 5 min) para habilitar feedback ágil y merge fluido.
+      \item \textbf{Paralelización en Contenedores:} Distribuir la suite de integración en múltiples agentes/workers concurrentes de Jenkins usando Testcontainers.
+      \item \textbf{Ejecución Nocturna / Post-Merge:} Pruebas de integración pesadas, regresión completa y carga corren asíncronamente post-merge o en \textit{Nightly Builds}.
+    \end{itemize}
+  \end{tcolorbox}
+\end{frame}
+
+\begin{frame}{Pregunta de Reflexión 3: Calidad vs. Métricas Ciegas}
+  \begin{tcolorbox}[colback=cbBlue!8,colframe=cbBlue,arc=4pt,title=\textbf{Pregunta 3: La Trampa de las Métricas de Cobertura},coltitle=cbWhite,fonttitle=\bfseries\small,top=4pt,bottom=4pt,left=6pt,right=6pt]
+    \small ¿Qué incentivos perversos puede provocar en los desarrolladores establecer un objetivo corporativo ciego del ``95\% de cobertura en JaCoCo''?
+  \end{tcolorbox}
+  \vspace{0.2cm}
+  \pause
+  \begin{tcolorbox}[colback=cbGreen!10,colframe=cbGreen,arc=4pt,title=\textbf{Análisis y Respuesta de Ingeniería},coltitle=cbWhite,fonttitle=\bfseries\small,top=4pt,bottom=4pt,left=6pt,right=6pt]
+    \footnotesize
+    \begin{itemize}
+      \setlength{\itemsep}{1.5pt}
+      \item \textbf{Ley de Goodhart:} Al convertir la métrica en meta, se crean pruebas vacías que ejecutan líneas sin validar aserciones reales (\textit{assertion-free tests}).
+      \item \textbf{Falsa Sensación de Seguridad:} Se sobre-prueban getters, setters y DTOs inflando la estadística, descuidando caminos de error y bifurcaciones complejas.
+      \item \textbf{Solución en Ingeniería:} Exigir \textit{Branch Coverage} en lógica de negocio crítica, junto a análisis estático en SonarQube y pruebas de mutación (Pitest).
+    \end{itemize}
+  \end{tcolorbox}
+\end{frame}
+
+\begin{frame}{Pregunta de Reflexión 4: Gestión de Incidentes Críticos}
+  \begin{tcolorbox}[colback=cbBlue!8,colframe=cbBlue,arc=4pt,title=\textbf{Pregunta 4: Bypass de Quality Gate en Incidentes P1},coltitle=cbWhite,fonttitle=\bfseries\small,top=4pt,bottom=4pt,left=6pt,right=6pt]
+    \small Durante una caída crítica en producción un fin de semana, ¿debería permitirse eludir (\textit{bypass}) el Quality Gate para desplegar un hotfix?
+  \end{tcolorbox}
+  \vspace{0.2cm}
+  \pause
+  \begin{tcolorbox}[colback=cbGreen!10,colframe=cbGreen,arc=4pt,title=\textbf{Análisis y Respuesta de Ingeniería},coltitle=cbWhite,fonttitle=\bfseries\small,top=4pt,bottom=4pt,left=6pt,right=6pt]
+    \footnotesize
+    \begin{itemize}
+      \setlength{\itemsep}{1.5pt}
+      \item \textbf{Riesgo de Agravamiento Mayor:} Eludir compuertas de calidad suele generar caídas secundarias más destructivas por defectos no verificados en el parche.
+      \item \textbf{Rollback antes que Hotfix a Ciegas:} La mejor práctica es revertir de inmediato al artefacto inmutable anterior en Nexus o apagar el \textit{feature flag}.
+      \item \textbf{Excepción Estrictamente Auditada:} Si el parche es imperativo, requiere aprobación dual (Lead DevOps / CTO), ticket P1 y remediación prioritaria en el sprint.
+    \end{itemize}
+  \end{tcolorbox}
+\end{frame}
+
+\begin{frame}{Pregunta de Reflexión 5: Inmutabilidad y Gobernanza}
+  \begin{tcolorbox}[colback=cbBlue!8,colframe=cbBlue,arc=4pt,title=\textbf{Pregunta 5: Nexus y la Inmutabilidad de Artefactos},coltitle=cbWhite,fonttitle=\bfseries\small,top=4pt,bottom=4pt,left=6pt,right=6pt]
+    \small ¿Por qué desplegar un artefacto generado manualmente en la laptop de un desarrollador directamente a Nexus viola los principios DevOps?
+  \end{tcolorbox}
+  \vspace{0.2cm}
+  \pause
+  \begin{tcolorbox}[colback=cbGreen!10,colframe=cbGreen,arc=4pt,title=\textbf{Análisis y Respuesta de Ingeniería},coltitle=cbWhite,fonttitle=\bfseries\small,top=4pt,bottom=4pt,left=6pt,right=6pt]
+    \footnotesize
+    \begin{itemize}
+      \setlength{\itemsep}{1.5pt}
+      \item \textbf{Riesgo ``En mi máquina funciona'':} El binario local puede compilarse con JDK o dependencias dispares, variables residuales o cambios locales no versionados.
+      \item \textbf{Ruptura de Cadena de Custodia:} Se pierde la trazabilidad del commit SHA exacto y se evaden los controles de seguridad SAST y análisis de calidad.
+      \item \textbf{Principio de Única Fuente de Verdad:} Solo los agentes de Jenkins en entornos aislados y limpios tienen credenciales para firmar y publicar en Nexus.
+    \end{itemize}
+  \end{tcolorbox}
+\end{frame}
+
+\end{document}
