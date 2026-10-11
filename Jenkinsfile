@@ -125,22 +125,23 @@ pipeline {
                 sh """
                     docker stop product-api-running || true
                     docker rm product-api-running || true
-                    docker run -d --name product-api-running -p ${APP_PORT}:8080 ${IMAGE_NAME}:${BUILD_NUMBER}
+                    docker run -d --name product-api-running --network taller-jenkins-sonar-deploy_devops-network -p ${APP_PORT}:8080 ${IMAGE_NAME}:${BUILD_NUMBER}
                 """
 
                 echo '===> [ETAPA 4] Ejecutando Smoke Test / Healthcheck de disponibilidad HTTP...'
-                sh """
-                    for i in {1..10}; do
-                        if curl -s -f http://localhost:${APP_PORT}/api/products; then
-                            echo "DESPLIEGUE EXITOSO: El microservicio responde correctamente en http://localhost:${APP_PORT}/api/products"
+                sh '''
+                    for i in $(seq 1 20); do
+                        if curl -s -f http://product-api-running:8080/api/products; then
+                            echo "DESPLIEGUE EXITOSO: El microservicio responde correctamente"
                             exit 0
                         fi
-                        echo "Esperando arranque del servicio... (intento \$i de 10)"
+                        echo "Esperando arranque del servicio... (intento $i de 20)"
                         sleep 3
                     done
                     echo "ERROR CRITICO: El microservicio no respondio a tiempo tras el despliegue."
+                    docker logs product-api-running
                     exit 1
-                """
+                '''
             }
         }
     }
