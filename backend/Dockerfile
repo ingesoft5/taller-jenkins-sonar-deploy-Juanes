@@ -1,5 +1,5 @@
 # Imagen base liviana optimizada para Java 17 en produccion
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre
 
 # Metadatos del microservicio
 LABEL maintainer="IasLab - Universidad Icesi"
