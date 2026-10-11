@@ -94,8 +94,10 @@ pipeline {
             }
             steps {
                 echo '===> [ETAPA 3] Publicando binario JAR inmutable en Sonatype Nexus OSS...'
-                dir('backend') {
-                    sh 'mvn deploy -DskipTests'
+                withCredentials([usernamePassword(credentialsId: 'nexus-credentials', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
+                    dir('backend') {
+                        sh 'mvn -s ../settings-ci.xml deploy -DskipTests'
+                    }
                 }
             }
         }

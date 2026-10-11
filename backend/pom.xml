@@ -22,6 +22,17 @@
         <sonar.projectName>product-api</sonar.projectName>
         <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
+
+    <distributionManagement>
+        <repository>
+            <id>nexus-releases</id>
+            <url>http://nexus:8081/repository/maven-releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>nexus-snapshots</id>
+            <url>http://nexus:8081/repository/maven-snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
     
     <dependencies>
         <dependency>
