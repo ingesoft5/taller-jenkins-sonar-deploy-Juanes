@@ -1,5 +1,5 @@
 pipeline {
-    agent none
+    agent any
 
     environment {
         SONAR_SERVER_NAME = 'SonarQube-Server'
@@ -17,8 +17,10 @@ pipeline {
                 docker {
                     image 'maven:3.9.6-eclipse-temurin-17'
                     args '--network taller-jenkins-sonar-deploy_devops-network'
+                    reuseNode true
                 }
             }
+
             steps {
                 dir('backend') {
                     sh 'mvn clean verify'
@@ -35,6 +37,14 @@ pipeline {
         // ETAPA 2: VALIDACION SAST (SONARQUBE) Y BLOQUEO POR QUALITY GATE
         // =========================================================================
         stage('SonarQube SAST Scan') {
+
+            agent {
+                docker {
+                    image 'maven:3.9.6-eclipse-temurin-17'
+                    args '--network taller-jenkins-sonar-deploy_devops-network'
+                    reuseNode true
+                }
+            }
             steps {
                 echo '===> [ETAPA 2] Ejecutando analisis estatico SAST con SonarQube...'
                 dir('backend') {
@@ -50,6 +60,7 @@ pipeline {
         }
 
         stage('Quality Gate') {
+
             steps {
                 echo '===> [ETAPA 2] Esperando veredicto reactivo del Quality Gate via Webhook...'
                 timeout(time: 5, unit: 'MINUTES') {
@@ -68,6 +79,15 @@ pipeline {
         // ETAPA 3: PUBLICACION DE ARTEFACTOS INMUTABLES (NEXUS + DOCKER)
         // =========================================================================
         stage('Publicacion en Nexus') {
+
+            agent {
+                docker {
+                    image 'maven:3.9.6-eclipse-temurin-17'
+                    args '--network taller-jenkins-sonar-deploy_devops-network'
+                    reuseNode true
+                }
+            }
+
             when {
                 branch 'main'
             }
@@ -81,6 +101,7 @@ pipeline {
 
         stage('Empaquetar Imagen Docker') {
             when {
+                beforeAgent true
                 branch 'main'
             }
             steps {
